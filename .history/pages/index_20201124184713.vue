@@ -4,12 +4,7 @@
       provider="local"
       :src="localSrc"
       :muted="true"
-      :thumbnail="thumbnail"
-    >
-      <!-- <template #poster>
-        ok
-      </template> -->
-    </AppVideo>
+    />
   </div>
 </template>
 
@@ -19,8 +14,7 @@ export default {
     return {
       vimeoId: '',
       youtubeId: '',
-      localSrc: require('assets/video.mp4'),
-      thumbnail: require('assets/thumbnail.jpg')
+      localSrc: require('assets/video.mp4')
     }
   }
 }

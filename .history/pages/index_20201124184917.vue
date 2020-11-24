@@ -6,9 +6,9 @@
       :muted="true"
       :thumbnail="thumbnail"
     >
-      <!-- <template #poster>
+      <template #poster>
         ok
-      </template> -->
+      </template>
     </AppVideo>
   </div>
 </template>

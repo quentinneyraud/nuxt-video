@@ -4,12 +4,8 @@
       provider="local"
       :src="localSrc"
       :muted="true"
-      :thumbnail="thumbnail"
-    >
-      <!-- <template #poster>
-        ok
-      </template> -->
-    </AppVideo>
+      :thumbnail="true"
+    />
   </div>
 </template>
 

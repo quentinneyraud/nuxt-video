@@ -5,11 +5,7 @@
       :src="localSrc"
       :muted="true"
       :thumbnail="thumbnail"
-    >
-      <!-- <template #poster>
-        ok
-      </template> -->
-    </AppVideo>
+    />
   </div>
 </template>
 
