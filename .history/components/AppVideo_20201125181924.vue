@@ -80,8 +80,8 @@
           </div>
         </div>
 
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -183,11 +183,6 @@ export default {
       required: false,
       default: 16 / 9
     },
-    showPoster: {
-      type: Boolean,
-      required: false,
-      default: true
-    },
     thumbnail: {
       type: String,
       required: false,
@@ -203,10 +198,21 @@ export default {
       required: false,
       default: false
     },
+    hasDefaultControls: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
     customControls: {
       type: Array,
       required: false,
-      default: null,
+      default () {
+        if (this.hasDefaultControls) {
+          return null
+        } else {
+          return AVAILABLE_CONTROLS
+        }
+      },
       validator: controls => {
         return !controls
           .some(control => {
@@ -218,15 +224,6 @@ export default {
 
             return false
           })
-      }
-    },
-    hasDefaultControls: {
-      type: Boolean,
-      required: false,
-      default () {
-        if (Array.isArray(this.customControls)) return false
-
-        return true
       }
     },
     /**
@@ -280,6 +277,8 @@ export default {
     }
   },
   mounted () {
+    console.log(this.hasDefaultControls)
+    console.log(this.customControls)
     this.initalize()
 
     if (!this.lazyload) {

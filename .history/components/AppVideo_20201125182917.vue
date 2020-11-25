@@ -280,6 +280,8 @@ export default {
     }
   },
   mounted () {
+    console.log(this.hasDefaultControls)
+    console.log(this.customControls)
     this.initalize()
 
     if (!this.lazyload) {

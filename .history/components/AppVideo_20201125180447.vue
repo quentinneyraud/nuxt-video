@@ -61,27 +61,13 @@
                     </span>
                   </slot>
                 </div>
-
-                <!-- Progress -->
-                <div
-                  v-if="customControl === 'progress'"
-                  :key="customControlIndex"
-                  class="AppVideo-progress"
-                >
-                  <slot
-                    name="progress"
-                    v-bind="{}"
-                  >
-                    <span>progress</span>
-                  </slot>
-                </div>
               </template>
             </slot>
           </div>
         </div>
 
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -118,7 +104,7 @@ const YOUTUBE_PROVIDER = 'youtube'
 const LOCAL_PROVIDER = 'local'
 
 // Controls
-const AVAILABLE_CONTROLS = ['play', 'time', 'progress', 'mute', 'fullscreen']
+const AVAILABLE_CONTROLS = ['time', 'progress', 'mute', 'fullscreen', 'play']
 
 const getYoutubePackage = _ => {
   try {
@@ -138,11 +124,6 @@ const getVimeoPackage = _ => {
 
 export default {
   props: {
-    /**
-     *
-     * Provider infos
-     *
-     */
     provider: {
       type: String,
       required: true,
@@ -153,60 +134,32 @@ export default {
       required: false,
       default: null
     },
-    youtubeOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
-    vimeoOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
     src: {
       type: [String, Array],
       required: false,
       default: null
     },
-    /**
-     *
-     * Templating
-     *
-     */
     useRatio: {
       type: Boolean,
       required: false,
       default: true
     },
-    defaultAspectRatio: {
-      type: Number,
-      required: false,
-      default: 16 / 9
-    },
-    showPoster: {
-      type: Boolean,
-      required: false,
-      default: true
-    },
-    thumbnail: {
-      type: String,
-      required: false,
-      default: null
-    },
-    /**
-     *
-     * Player options
-     *
-     */
     muted: {
       type: Boolean,
       required: false,
       default: false
     },
+    hasDefaultControls: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
     customControls: {
       type: Array,
       required: false,
-      default: null,
+      default: _ => {
+        console.log(this);
+      },
       validator: controls => {
         return !controls
           .some(control => {
@@ -220,20 +173,16 @@ export default {
           })
       }
     },
-    hasDefaultControls: {
-      type: Boolean,
+    thumbnail: {
+      type: String,
       required: false,
-      default () {
-        if (Array.isArray(this.customControls)) return false
-
-        return true
-      }
+      default: null
     },
-    /**
-     *
-     * Lazyload
-     *
-     */
+    defaultAspectRatio: {
+      type: Number,
+      required: false,
+      default: 16 / 9
+    },
     lazyload: {
       type: Boolean,
       required: false,
@@ -257,7 +206,8 @@ export default {
       },
       aspectRatio: this.defaultAspectRatio,
       currentTime: 0,
-      duration: 0
+      duration: 0,
+      controls: this.customControls
     }
   },
   computed: {
@@ -281,6 +231,10 @@ export default {
   },
   mounted () {
     this.initalize()
+
+    if (!this.hasDefaultControls && this.customControls === null) {
+      this.controls =
+    }
 
     if (!this.lazyload) {
       this.load()

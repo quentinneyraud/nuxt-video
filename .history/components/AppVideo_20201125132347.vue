@@ -16,72 +16,10 @@
         }"
       >
         <!-- Interface -->
-        <div v-if="!hasDefaultControls" class="AppVideo-interface">
-          <!-- Actions -->
-          <div class="AppVideo-actions">
-            <slot name="actions">
-              <template
-                v-for="(customControl, customControlIndex) in customControls"
-              >
-                <!-- Play -->
-                <div
-                  v-if="customControl === 'play'"
-                  :key="customControlIndex"
-                  class="AppVideo-play"
-                >
-                  <slot
-                    name="play"
-                    v-bind="{}"
-                  >
-                    <span>play</span>
-                  </slot>
-                </div>
+        <div v-if="!hasDefaultControls" class="AppVideo-interface" />
 
-                <!-- Time -->
-                <div
-                  v-if="customControl === 'time'"
-                  :key="customControlIndex"
-                  class="AppVideo-time"
-                >
-                  <slot
-                    name="time"
-                    v-bind="{
-                      currentTime,
-                      formattedCurrentTime: formatTime(currentTime),
-                      duration,
-                      formattedDuration: formatTime(duration)
-                    }"
-                  >
-                    <span class="AppVideo-currentTime">
-                      {{ formatTime(currentTime) }}
-                    </span>
-                    <span class="AppVideo-timeSeparator">/</span>
-                    <span class="AppVideo-duration">
-                      {{ formatTime(duration) }}
-                    </span>
-                  </slot>
-                </div>
-
-                <!-- Progress -->
-                <div
-                  v-if="customControl === 'progress'"
-                  :key="customControlIndex"
-                  class="AppVideo-progress"
-                >
-                  <slot
-                    name="progress"
-                    v-bind="{}"
-                  >
-                    <span>progress</span>
-                  </slot>
-                </div>
-              </template>
-            </slot>
-          </div>
-        </div>
-
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -117,32 +55,26 @@ const VIMEO_PROVIDER = 'vimeo'
 const YOUTUBE_PROVIDER = 'youtube'
 const LOCAL_PROVIDER = 'local'
 
-// Controls
-const AVAILABLE_CONTROLS = ['play', 'time', 'progress', 'mute', 'fullscreen']
+let yt = null
 
-const getYoutubePackage = _ => {
+const getYoutube = _ => {
   try {
     return require('youtube-player').default
   } catch (e) {
-    return null
+    return false
   }
 }
 
-const getVimeoPackage = _ => {
-  try {
-    return require('@vimeo/player').default
-  } catch (e) {
-    return null
-  }
-}
+// const gsapInstalled = (_ => {
+//   try {
+//     return !!require.resolve('gsap')
+//   } catch (e) {
+//     return false
+//   }
+// })()
 
 export default {
   props: {
-    /**
-     *
-     * Provider infos
-     *
-     */
     provider: {
       type: String,
       required: true,
@@ -153,87 +85,41 @@ export default {
       required: false,
       default: null
     },
-    youtubeOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
-    vimeoOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
     src: {
       type: [String, Array],
       required: false,
       default: null
     },
-    /**
-     *
-     * Templating
-     *
-     */
     useRatio: {
       type: Boolean,
       required: false,
       default: true
     },
-    defaultAspectRatio: {
-      type: Number,
+    muted: {
+      type: Boolean,
       required: false,
-      default: 16 / 9
+      default: false
     },
-    showPoster: {
+    hasDefaultControls: {
       type: Boolean,
       required: false,
       default: true
+    },
+    customControls: {
+      type: Array,
+      required: false,
+      default: null
     },
     thumbnail: {
       type: String,
       required: false,
       default: null
     },
-    /**
-     *
-     * Player options
-     *
-     */
-    muted: {
-      type: Boolean,
+    defaultAspectRatio: {
+      type: Number,
       required: false,
-      default: false
+      default: 16 / 9
     },
-    customControls: {
-      type: Array,
-      required: false,
-      default: null,
-      validator: controls => {
-        return !controls
-          .some(control => {
-            if (!AVAILABLE_CONTROLS.includes(control)) {
-              // eslint-disable-next-line no-console
-              console.warn(`${control} is not a valid control. Use one of these: ${AVAILABLE_CONTROLS.join(', ')}`)
-              return true
-            }
-
-            return false
-          })
-      }
-    },
-    hasDefaultControls: {
-      type: Boolean,
-      required: false,
-      default () {
-        if (Array.isArray(this.customControls)) return false
-
-        return true
-      }
-    },
-    /**
-     *
-     * Lazyload
-     *
-     */
     lazyload: {
       type: Boolean,
       required: false,
@@ -255,9 +141,7 @@ export default {
         isFullScreen: false,
         isError: false
       },
-      aspectRatio: this.defaultAspectRatio,
-      currentTime: 0,
-      duration: 0
+      aspectRatio: this.defaultAspectRatio
     }
   },
   computed: {
@@ -280,6 +164,10 @@ export default {
     }
   },
   mounted () {
+    if (this.isYoutube) {
+      yt = getYoutube()
+      console.log(yt)
+    }
     this.initalize()
 
     if (!this.lazyload) {
@@ -291,7 +179,6 @@ export default {
       if (this.isLocal) {
         this.$refs.player.addEventListener('canplaythrough', this.onCanPlayThrough)
         this.$refs.player.addEventListener('play', this.onPlay)
-        this.$refs.player.addEventListener('timeupdate', this.onTimeUpdate)
       }
     },
     /**
@@ -320,14 +207,6 @@ export default {
     onCanPlayThrough () {
       this.state.isLoading = false
       this.state.isLoaded = true
-      if (this.isLocal) {
-        this.duration = this.$refs.player.duration
-      }
-    },
-    onTimeUpdate () {
-      if (this.isLocal) {
-        this.currentTime = this.$refs.player.currentTime
-      }
     },
     /**
      *
@@ -347,9 +226,10 @@ export default {
       }
     },
     pause () {
-      if (this.isLocal) {
-        this.$refs.player.pause()
-      }
+      this.player
+        .pause()
+        .catch(_ => {
+        })
     },
     stop () {
       this.player.pause()
@@ -375,20 +255,7 @@ export default {
     exitFullScreen () {
       const method = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen
       method?.()
-    },
-    /**
-     *
-     * Utils
-     *
-     */
-    formatTime (time) {
-      const hours = Math.floor(time / 60 * 60).toFixed().padStart(2, '0')
-      const minutes = Math.floor(time / 60).toFixed().padStart(2, '0')
-      const seconds = (time % 60).toFixed().padStart(2, '0')
-
-      return time > 3600 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`
     }
-
   }
 }
 </script>
@@ -450,38 +317,4 @@ export default {
     position absolute
     z-index 10
     color white
-
-.AppVideo-actions
-  position absolute
-  bottom 0
-  left 0
-  width 100%
-  height 100px
-  padding 0 35px
-  display flex
-  align-items center
-
-  &:after
-    content ''
-    position absolute
-    top -100%
-    left 0
-    bottom 0
-    right 0
-    width 100%
-    height 200%
-    background linear-gradient(to top, black, transparent)
-
-.AppVideo-time
-  position relative
-  z-index 10
-
-.AppVideo-currentTime, .AppVideo-duration
-  color white
-
-.AppVideo-duration
-  font-weight bold
-
-.AppVideo-timeSeparator
-  color white
 </style>

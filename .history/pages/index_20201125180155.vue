@@ -4,9 +4,9 @@
       provider="local"
       :src="localSrc"
       :muted="true"
-      :show-poster="false"
-      :lazyload="false"
-      :custom-controls="['play']"
+      :thumbnail="thumbnail"
+      :has-default-controls="false"
+      :custom-controls="['time', 'progress', 'play']"
     />
   </div>
 </template>

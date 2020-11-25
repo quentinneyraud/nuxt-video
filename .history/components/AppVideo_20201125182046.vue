@@ -80,8 +80,8 @@
           </div>
         </div>
 
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -183,11 +183,6 @@ export default {
       required: false,
       default: 16 / 9
     },
-    showPoster: {
-      type: Boolean,
-      required: false,
-      default: true
-    },
     thumbnail: {
       type: String,
       required: false,
@@ -280,6 +275,8 @@ export default {
     }
   },
   mounted () {
+    console.log(this.hasDefaultControls)
+    console.log(this.customControls)
     this.initalize()
 
     if (!this.lazyload) {

@@ -20,68 +20,25 @@
           <!-- Actions -->
           <div class="AppVideo-actions">
             <slot name="actions">
-              <template
-                v-for="(customControl, customControlIndex) in customControls"
-              >
-                <!-- Play -->
-                <div
-                  v-if="customControl === 'play'"
-                  :key="customControlIndex"
-                  class="AppVideo-play"
+              <div class="AppVideo-time">
+                <slot
+                  name="time"
+                  v-bind="{
+                    currentTime,
+                    formattedCurrentTime: formatTime(currentTime),
+                    duration,
+                    formattedDuration: formatTime(duration)
+                  }"
                 >
-                  <slot
-                    name="play"
-                    v-bind="{}"
-                  >
-                    <span>play</span>
-                  </slot>
-                </div>
-
-                <!-- Time -->
-                <div
-                  v-if="customControl === 'time'"
-                  :key="customControlIndex"
-                  class="AppVideo-time"
-                >
-                  <slot
-                    name="time"
-                    v-bind="{
-                      currentTime,
-                      formattedCurrentTime: formatTime(currentTime),
-                      duration,
-                      formattedDuration: formatTime(duration)
-                    }"
-                  >
-                    <span class="AppVideo-currentTime">
-                      {{ formatTime(currentTime) }}
-                    </span>
-                    <span class="AppVideo-timeSeparator">/</span>
-                    <span class="AppVideo-duration">
-                      {{ formatTime(duration) }}
-                    </span>
-                  </slot>
-                </div>
-
-                <!-- Progress -->
-                <div
-                  v-if="customControl === 'progress'"
-                  :key="customControlIndex"
-                  class="AppVideo-progress"
-                >
-                  <slot
-                    name="progress"
-                    v-bind="{}"
-                  >
-                    <span>progress</span>
-                  </slot>
-                </div>
-              </template>
+                  {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+                </slot>
+              </div>
             </slot>
           </div>
         </div>
 
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -118,7 +75,7 @@ const YOUTUBE_PROVIDER = 'youtube'
 const LOCAL_PROVIDER = 'local'
 
 // Controls
-const AVAILABLE_CONTROLS = ['play', 'time', 'progress', 'mute', 'fullscreen']
+const AVAILABLE_CONTROLS = ['time', 'progress', 'mute']
 
 const getYoutubePackage = _ => {
   try {
@@ -138,11 +95,6 @@ const getVimeoPackage = _ => {
 
 export default {
   props: {
-    /**
-     *
-     * Provider infos
-     *
-     */
     provider: {
       type: String,
       required: true,
@@ -153,55 +105,25 @@ export default {
       required: false,
       default: null
     },
-    youtubeOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
-    vimeoOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
     src: {
       type: [String, Array],
       required: false,
       default: null
     },
-    /**
-     *
-     * Templating
-     *
-     */
     useRatio: {
       type: Boolean,
       required: false,
       default: true
     },
-    defaultAspectRatio: {
-      type: Number,
-      required: false,
-      default: 16 / 9
-    },
-    showPoster: {
-      type: Boolean,
-      required: false,
-      default: true
-    },
-    thumbnail: {
-      type: String,
-      required: false,
-      default: null
-    },
-    /**
-     *
-     * Player options
-     *
-     */
     muted: {
       type: Boolean,
       required: false,
       default: false
+    },
+    hasDefaultControls: {
+      type: Boolean,
+      required: false,
+      default: true
     },
     customControls: {
       type: Array,
@@ -220,20 +142,16 @@ export default {
           })
       }
     },
-    hasDefaultControls: {
-      type: Boolean,
+    thumbnail: {
+      type: String,
       required: false,
-      default () {
-        if (Array.isArray(this.customControls)) return false
-
-        return true
-      }
+      default: null
     },
-    /**
-     *
-     * Lazyload
-     *
-     */
+    defaultAspectRatio: {
+      type: Number,
+      required: false,
+      default: 16 / 9
+    },
     lazyload: {
       type: Boolean,
       required: false,
@@ -471,17 +389,4 @@ export default {
     width 100%
     height 200%
     background linear-gradient(to top, black, transparent)
-
-.AppVideo-time
-  position relative
-  z-index 10
-
-.AppVideo-currentTime, .AppVideo-duration
-  color white
-
-.AppVideo-duration
-  font-weight bold
-
-.AppVideo-timeSeparator
-  color white
 </style>

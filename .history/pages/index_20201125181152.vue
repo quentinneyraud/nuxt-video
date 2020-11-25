@@ -4,8 +4,8 @@
       provider="local"
       :src="localSrc"
       :muted="true"
-      :show-poster="false"
-      :lazyload="false"
+      :thumbnail="thumbnail"
+      :has-default-controls="false"
       :custom-controls="['play']"
     />
   </div>

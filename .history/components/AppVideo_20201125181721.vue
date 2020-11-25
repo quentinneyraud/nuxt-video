@@ -80,8 +80,8 @@
           </div>
         </div>
 
-        <!-- Poster -->
-        <div v-if="showPoster && !state.isPlaying" class="AppVideo-poster">
+        <!-- Interface -->
+        <div v-if="!state.isPlaying" class="AppVideo-poster">
           <slot name="poster">
             <img :src="thumbnail" alt="">
 
@@ -153,60 +153,36 @@ export default {
       required: false,
       default: null
     },
-    youtubeOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
-    vimeoOptions: {
-      type: Object,
-      required: false,
-      default: null
-    },
     src: {
       type: [String, Array],
       required: false,
       default: null
     },
-    /**
-     *
-     * Templating
-     *
-     */
     useRatio: {
       type: Boolean,
       required: false,
       default: true
     },
-    defaultAspectRatio: {
-      type: Number,
-      required: false,
-      default: 16 / 9
-    },
-    showPoster: {
-      type: Boolean,
-      required: false,
-      default: true
-    },
-    thumbnail: {
-      type: String,
-      required: false,
-      default: null
-    },
-    /**
-     *
-     * Player options
-     *
-     */
     muted: {
       type: Boolean,
       required: false,
       default: false
     },
+    hasDefaultControls: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
     customControls: {
       type: Array,
       required: false,
-      default: null,
+      default () {
+        if (this.hasDefaultControls) {
+          return null
+        } else {
+          return AVAILABLE_CONTROLS
+        }
+      },
       validator: controls => {
         return !controls
           .some(control => {
@@ -220,20 +196,16 @@ export default {
           })
       }
     },
-    hasDefaultControls: {
-      type: Boolean,
+    thumbnail: {
+      type: String,
       required: false,
-      default () {
-        if (Array.isArray(this.customControls)) return false
-
-        return true
-      }
+      default: null
     },
-    /**
-     *
-     * Lazyload
-     *
-     */
+    defaultAspectRatio: {
+      type: Number,
+      required: false,
+      default: 16 / 9
+    },
     lazyload: {
       type: Boolean,
       required: false,
@@ -280,6 +252,8 @@ export default {
     }
   },
   mounted () {
+    console.log(this.hasDefaultControls)
+    console.log(this.customControls)
     this.initalize()
 
     if (!this.lazyload) {

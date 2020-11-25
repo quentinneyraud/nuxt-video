@@ -4,10 +4,13 @@
       provider="local"
       :src="localSrc"
       :muted="true"
-      :show-poster="false"
-      :lazyload="false"
-      :custom-controls="['play']"
-    />
+      :thumbnail="thumbnail"
+      custom-controls="ok"
+    >
+      <!-- <template #poster>
+        ok
+      </template> -->
+    </AppVideo>
   </div>
 </template>
 
@@ -24,9 +27,5 @@ export default {
 }
 </script>
 
-<style lang="stylus" scoped>
-.container
-  width calc(100% - 100px)
-  margin 0 auto
-  margin-top 50px
+<style>
 </style>
