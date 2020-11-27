@@ -6,7 +6,7 @@
       :muted="true"
       :show-poster="false"
       :lazyload="false"
-      :custom-controls="['play']"
+      :has-default-controls="false"
     />
   </div>
 </template>

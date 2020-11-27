@@ -17,66 +17,152 @@
       >
         <!-- Interface -->
         <div v-if="!hasDefaultControls" class="AppVideo-interface">
-          <!-- Actions -->
-          <div class="AppVideo-actions">
-            <slot name="actions">
-              <template
-                v-for="(customControl, customControlIndex) in customControls"
-              >
-                <!-- Play -->
-                <div
-                  v-if="customControl === 'play'"
-                  :key="customControlIndex"
-                  class="AppVideo-play"
+          <!-- Controls -->
+          <div class="AppVideo-controls">
+            <div class="AppVideo-controlsInner">
+              <slot name="controls">
+                <template
+                  v-for="(customControl, customControlIndex) in customControls"
                 >
-                  <slot
-                    name="play"
-                    v-bind="{}"
+                  <!-- Play -->
+                  <div
+                    v-if="customControl === 'play'"
+                    :key="customControlIndex"
+                    class="AppVideo-control AppVideo-actions"
                   >
-                    <span>play</span>
-                  </slot>
-                </div>
+                    <slot
+                      name="actions"
+                      v-bind="{}"
+                    >
+                      <div class="AppVideo-actionsButtons">
+                        <button
+                          v-if="state.isPaused || !state.isPlaying"
+                          class="AppVideo-actionButton AppVideo-playButton"
+                          aria-label="Play the video"
+                          @click="play"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75.2 94.9">
+                            <path d="M71.8 41.1L12 1.3C6.9-2.1 0 1.6 0 7.7v79.5c0 6.2 6.9 9.8 12 6.4l59.8-39.8c4.5-2.9 4.5-9.7 0-12.7z" />
+                          </svg>
+                        </button>
 
-                <!-- Time -->
-                <div
-                  v-if="customControl === 'time'"
-                  :key="customControlIndex"
-                  class="AppVideo-time"
-                >
-                  <slot
-                    name="time"
-                    v-bind="{
-                      currentTime,
-                      formattedCurrentTime: formatTime(currentTime),
-                      duration,
-                      formattedDuration: formatTime(duration)
-                    }"
-                  >
-                    <span class="AppVideo-currentTime">
-                      {{ formatTime(currentTime) }}
-                    </span>
-                    <span class="AppVideo-timeSeparator">/</span>
-                    <span class="AppVideo-duration">
-                      {{ formatTime(duration) }}
-                    </span>
-                  </slot>
-                </div>
+                        <button
+                          v-if="state.isPlaying"
+                          class="AppVideo-actionButton AppVideo-pauseButton"
+                          aria-label="Pause the video"
+                          @click="pause"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 81.1 95.1">
+                            <path d="M26.2 0H3.9C1.8 0 0 1.7 0 3.9v87.3c0 2.1 1.7 3.9 3.9 3.9h22.2c2.1 0 3.9-1.7 3.9-3.9V3.9C30 1.7 28.3 0 26.2 0zM77.3 0H55c-2.1 0-3.9 1.7-3.9 3.9v87.3c0 2.1 1.7 3.9 3.9 3.9h22.2c2.1 0 3.9-1.7 3.9-3.9V3.9c0-2.2-1.7-3.9-3.8-3.9z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </slot>
+                  </div>
 
-                <!-- Progress -->
-                <div
-                  v-if="customControl === 'progress'"
-                  :key="customControlIndex"
-                  class="AppVideo-progress"
-                >
-                  <slot
-                    name="progress"
-                    v-bind="{}"
+                  <!-- Time -->
+                  <div
+                    v-if="customControl === 'time'"
+                    :key="customControlIndex"
+                    class="AppVideo-control AppVideo-time"
                   >
-                    <span>progress</span>
-                  </slot>
-                </div>
-              </template>
-            </slot>
+                    <slot
+                      name="time"
+                      v-bind="{
+                        currentTime,
+                        formattedCurrentTime: formatTime(currentTime),
+                        duration,
+                        formattedDuration: formatTime(duration)
+                      }"
+                    >
+                      <span class="AppVideo-currentTime">
+                        {{ formatTime(currentTime) }}
+                      </span>
+                      <span class="AppVideo-timeSeparator">/</span>
+                      <span class="AppVideo-duration">
+                        {{ formatTime(duration) }}
+                      </span>
+                    </slot>
+                  </div>
+
+                  <!-- Progress -->
+                  <div
+                    v-if="customControl === 'progress'"
+                    :key="customControlIndex"
+                    class="AppVideo-control AppVideo-progress"
+                  >
+                    <slot
+                      name="progress"
+                      v-bind="{
+                        currentTime,
+                        duration,
+                        timeRatio
+                      }"
+                    >
+                      <div class="AppVideo-progressTrack" />
+                      <div
+                        class="AppVideo-progressThumb"
+                        :style="{
+                          '--time-ratio': timeRatio
+                        }"
+                      />
+                    </slot>
+                  </div>
+
+                  <!-- Mute -->
+                  <div
+                    v-if="customControl === 'mute'"
+                    :key="customControlIndex"
+                    class="AppVideo-control AppVideo-mute"
+                  >
+                    <slot
+                      name="mute"
+                      v-bind="{}"
+                    >
+                      <button
+                        class="AppVideo-muteButton"
+                        :class="{
+                          '--is-muted': state.isMuted
+                        }"
+                        :aria-label="state.isMuted ? 'Unmute the video' : 'Mute the video'"
+                        @click="state.isMuted ? unmute() : mute()"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                          <path d="M10.6.1L5 5v10l5.6 4.9c.7.3 1.4-.2 1.4-.9V1c0-.7-.7-1.2-1.4-.9zM0 6v8c0 .6.4 1 1 1h2V5H1c-.6 0-1 .4-1 1zM14 6.6v6.8c1.2-.7 2-2 2-3.4s-.8-2.7-2-3.4z" />
+                          <path d="M14 2.3v2.1c2.3.8 4 3 4 5.6s-1.7 4.8-4 5.6v2.1c3.4-.9 6-4 6-7.7s-2.5-6.8-6-7.7z" />
+                        </svg>
+                      </button>
+                    </slot>
+                  </div>
+
+                  <!-- Fullscreen -->
+                  <div
+                    v-if="customControl === 'fullscreen'"
+                    :key="customControlIndex"
+                    class="AppVideo-control AppVideo-fullscreen"
+                  >
+                    <slot
+                      name="fullscreen"
+                      v-bind="{}"
+                    >
+                      <button
+                        class="AppVideo-fullscreenButton"
+                        :class="{
+                          '--is-fullscreen': state.isFullScreen
+                        }"
+                        :aria-label="state.isFullscreen ? 'Exit fullscreen' : 'Go fullscreen'"
+                        @click="state.isFullScreen ? exitFullscreen() : goFullscreen()"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                          <path fill="none" d="M0 0h24v24H0z" />
+                          <path d="M9 3v2H5v4H3V3h6zM3 15h2v4h4v2H3v-6zM15 3h6v6h-2V5h-4V3zm4 12h2v6h-6v-2h4v-4z" />
+                        </svg>
+                      </button>
+                    </slot>
+                  </div>
+                </template>
+              </slot>
+            </div>
           </div>
         </div>
 
@@ -206,7 +292,7 @@ export default {
     customControls: {
       type: Array,
       required: false,
-      default: null,
+      default: _ => AVAILABLE_CONTROLS,
       validator: controls => {
         return !controls
           .some(control => {
@@ -253,11 +339,13 @@ export default {
         isLoading: false,
         isLoaded: false,
         isFullScreen: false,
-        isError: false
+        isError: false,
+        isMuted: this.muted
       },
       aspectRatio: this.defaultAspectRatio,
       currentTime: 0,
-      duration: 0
+      duration: 0,
+      timeRatio: 0
     }
   },
   computed: {
@@ -291,6 +379,7 @@ export default {
       if (this.isLocal) {
         this.$refs.player.addEventListener('canplaythrough', this.onCanPlayThrough)
         this.$refs.player.addEventListener('play', this.onPlay)
+        this.$refs.player.addEventListener('pause', this.onPause)
         this.$refs.player.addEventListener('timeupdate', this.onTimeUpdate)
       }
     },
@@ -327,6 +416,7 @@ export default {
     onTimeUpdate () {
       if (this.isLocal) {
         this.currentTime = this.$refs.player.currentTime
+        this.timeRatio = this.currentTime / this.duration
       }
     },
     /**
@@ -364,17 +454,31 @@ export default {
       this.$emit('play')
     },
     onPause () {
-      this.$bus.$off('tick', this.onTick)
-      this.isPlaying = false
-      this.isPaused = true
+      this.state.isPlaying = false
+      this.state.isPaused = true
     },
-    setFullScreen () {
+    goFullscreen () {
       const method = this.$el.requestFullscreen || this.$el.mozRequestFullScreen || this.$el.webkitRequestFullscreen || this.$el.msRequestFullscreen
-      method?.()
+      method?.call(this.$el)
+
+      this.state.isFullScreen = true
     },
-    exitFullScreen () {
+    exitFullscreen () {
       const method = document.exitFullscreen || document.mozCancelFullScreen || document.webkitExitFullscreen || document.msExitFullscreen
-      method?.()
+      method?.call(document)
+
+      this.state.isFullScreen = false
+    },
+    mute () {
+      this.state.isMuted = true
+
+      if (this.isLocal) {
+        this.$refs.player.muted = true
+      }
+    },
+    unmute () {
+      this.state.isMuted = false
+      this.$refs.player.muted = false
     },
     /**
      *
@@ -398,6 +502,12 @@ export default {
   position relative
   height 100%
   width 100%
+
+  button
+    background-color transparent
+    outline none
+    border none
+    cursor pointer
 
 .AppVideo-ratioHelper
   position relative
@@ -451,15 +561,18 @@ export default {
     z-index 10
     color white
 
-.AppVideo-actions
+/**
+
+  Controls
+
+ */
+.AppVideo-controls
   position absolute
   bottom 0
   left 0
   width 100%
   height 100px
   padding 0 35px
-  display flex
-  align-items center
 
   &:after
     content ''
@@ -472,6 +585,28 @@ export default {
     height 200%
     background linear-gradient(to top, black, transparent)
 
+.AppVideo-control
+  margin 0 10px
+
+  &:first-child
+    margin-left 0
+
+  &:last-child
+    margin-right 0
+
+.AppVideo-controlsInner
+  position relative
+  width 100%
+  height 100%
+  z-index 10
+  display flex
+  align-items center
+
+/**
+
+  Time
+
+ */
 .AppVideo-time
   position relative
   z-index 10
@@ -484,4 +619,125 @@ export default {
 
 .AppVideo-timeSeparator
   color white
+
+/**
+
+  Play
+
+ */
+.AppVideo-actionsButtons
+  position relative
+  width 40px
+  height 40px
+
+.AppVideo-actionButton
+  position absolute
+  top 0
+  left 0
+  width 40px
+  height 40px
+
+  svg
+    position absolute
+    top 50%
+    left 50%
+    transform translate(-50%, -50%)
+    max-width 30px
+    max-height 30px
+    fill white
+    pointer-events none
+
+.AppVideo-progress
+  position relative
+  flex-grow 1
+
+.AppVideo-progressTrack
+  position absolute
+  top 50%
+  left 0
+  width 100%
+  height 1px
+  transform translateY(-50%)
+  background-color grey
+
+.AppVideo-progressThumb
+  position absolute
+  top 50%
+  left 0
+  width 100%
+  height 2px
+  background-color white
+  transform-origin left center
+  transform translateY(-50%) scaleX(var(--time-ratio))
+  transition transform 0.2s
+
+/**
+
+  Mute
+
+ */
+.AppVideo-mute
+  position relative
+  width 40px
+  height 40px
+
+.AppVideo-muteButton
+  position absolute
+  top 0
+  left 0
+  width 40px
+  height 40px
+
+  &:after
+    content ''
+    position absolute
+    top 50%
+    left 50%
+    transform translate(-50%, -50%) rotate(-50deg) scaleX(0)
+    transition transform 0.3s ease-in-out
+    height 4px
+    width 80%
+    border-radius 5px
+    background-color white
+    pointer-events none
+
+  &.--is-muted:after
+    transform translate(-50%, -50%) rotate(-50deg) scaleX(1)
+
+  svg
+    position absolute
+    top 50%
+    left 50%
+    transform translate(-50%, -50%)
+    max-width 30px
+    max-height 30px
+    fill white
+    pointer-events none
+
+/**
+
+  Fullscreen
+
+ */
+.AppVideo-fullscreen
+  position relative
+  width 40px
+  height 40px
+
+.AppVideo-fullscreenButton
+  position absolute
+  top 0
+  left 0
+  width 40px
+  height 40px
+
+  svg
+    position absolute
+    top 50%
+    left 50%
+    transform translate3d(-50%, -50%, 0px)
+    max-width 30px
+    max-height 30px
+    fill white
+    pointer-events none
 </style>
