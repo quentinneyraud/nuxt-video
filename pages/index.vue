@@ -5,6 +5,14 @@
       :src="localSrc"
       :muted="true"
       :show-poster="false"
+      :lazyload="true"
+      :has-default-controls="false"
+    />
+    <AppVideo
+      :id="vimeoId"
+      provider="vimeo"
+      :muted="true"
+      :show-poster="false"
       :lazyload="false"
       :has-default-controls="false"
     />
@@ -15,7 +23,7 @@
 export default {
   data () {
     return {
-      vimeoId: '',
+      vimeoId: '28236362',
       youtubeId: '',
       localSrc: require('assets/video.mp4'),
       thumbnail: require('assets/thumbnail.jpg')

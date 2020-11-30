@@ -8,11 +8,16 @@
       class="AppVideo-component"
       allow="fullscreen"
       allowfullscreen
+      :class="{
+        '--is-fullscreen': state.isFullScreen,
+        '--is-loading': state.isLoading,
+        '--is-loaded': state.isLoaded
+      }"
     >
       <div
         class="AppVideo-ratioHelper"
         :style="{
-          '--aspect-ratio': aspectRatio
+          '--aspect-ratio': aspectRatio.toFixed(2)
         }"
       >
         <!-- Interface -->
@@ -39,7 +44,7 @@
                           v-if="state.isPaused || !state.isPlaying"
                           class="AppVideo-actionButton AppVideo-playButton"
                           aria-label="Play the video"
-                          @click="play"
+                          @click="onPlayClick"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75.2 94.9">
                             <path d="M71.8 41.1L12 1.3C6.9-2.1 0 1.6 0 7.7v79.5c0 6.2 6.9 9.8 12 6.4l59.8-39.8c4.5-2.9 4.5-9.7 0-12.7z" />
@@ -50,7 +55,7 @@
                           v-if="state.isPlaying"
                           class="AppVideo-actionButton AppVideo-pauseButton"
                           aria-label="Pause the video"
-                          @click="pause"
+                          @click="onPauseClick"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 81.1 95.1">
                             <path d="M26.2 0H3.9C1.8 0 0 1.7 0 3.9v87.3c0 2.1 1.7 3.9 3.9 3.9h22.2c2.1 0 3.9-1.7 3.9-3.9V3.9C30 1.7 28.3 0 26.2 0zM77.3 0H55c-2.1 0-3.9 1.7-3.9 3.9v87.3c0 2.1 1.7 3.9 3.9 3.9h22.2c2.1 0 3.9-1.7 3.9-3.9V3.9c0-2.2-1.7-3.9-3.8-3.9z" />
@@ -182,7 +187,7 @@
           <video
             v-if="isLocal"
             ref="player"
-            class="AppVideo-player"
+            class="AppVideo-localPlayer"
             v-bind="{
               muted,
               controls: hasDefaultControls,
@@ -191,6 +196,13 @@
           >
             <source :src="src">
           </video>
+
+          <!-- Vimeo container -->
+          <div
+            v-if="isVimeo"
+            ref="player"
+            class="AppVideo-vimeoPlayer"
+          />
         </div>
       </div>
     </div>
@@ -235,7 +247,7 @@ export default {
       validator: provider => [LOCAL_PROVIDER, VIMEO_PROVIDER, YOUTUBE_PROVIDER].includes(provider)
     },
     id: {
-      type: Number,
+      type: String,
       required: false,
       default: null
     },
@@ -381,6 +393,14 @@ export default {
         this.$refs.player.addEventListener('play', this.onPlay)
         this.$refs.player.addEventListener('pause', this.onPause)
         this.$refs.player.addEventListener('timeupdate', this.onTimeUpdate)
+      } else if (this.isVimeo) {
+        const Vimeo = getVimeoPackage()
+
+        this.player = new Vimeo(this.$refs.player, {
+          id: this.id,
+          controls: this.hasDefaultControls,
+          ...this.vimeoOptions
+        })
       }
     },
     /**
@@ -391,32 +411,39 @@ export default {
     load () {
       this.state.isLoading = true
 
-      return new Promise((resolve, reject) => {
-        if (this.state.isLoaded) resolve()
+      if (this.isLocal) {
+        if (this.state.isLoaded || this.$refs.player.readyState > 3) {
+          this.onLoaded()
+        } else {
+          const onCanPlayThrough = _ => {
+            this.onLoaded()
+            this.$refs.player.removeEventListener('canplaythrough', onCanPlayThrough)
+          }
+          this.$refs.player.addEventListener('canplaythrough', onCanPlayThrough)
 
-        const onCanPlayThrough = _ => {
-          resolve()
-          this.$refs.player.removeEventListener('canplaythrough', onCanPlayThrough)
+          this.$refs.player.preload = 'auto'
         }
-        this.$refs.player.addEventListener('canplaythrough', onCanPlayThrough)
-
-        this.$refs.player.preload = 'auto'
-      })
+      }
     },
     onEnterViewport () {
       this.load()
     },
-    onCanPlayThrough () {
+    onLoaded () {
       this.state.isLoading = false
       this.state.isLoaded = true
+
       if (this.isLocal) {
         this.duration = this.$refs.player.duration
+
+        if (this.useRatio) {
+          this.aspectRatio = this.$refs.player.videoWidth / this.$refs.player.videoHeight
+        }
       }
     },
     onTimeUpdate () {
       if (this.isLocal) {
         this.currentTime = this.$refs.player.currentTime
-        this.timeRatio = this.currentTime / this.duration
+        this.timeRatio = this.currentTime / this.$refs.player.duration
       }
     },
     /**
@@ -429,21 +456,29 @@ export default {
         this.play()
       } else {
         await this.load()
+        this.play()
       }
     },
-    play () {
+    async play () {
       if (this.isLocal) {
         this.$refs.player.play()
+      } else if (this.isVimeo) {
+        await this.player.play()
       }
     },
-    pause () {
+    async pause () {
       if (this.isLocal) {
         this.$refs.player.pause()
+      } else if (this.isVimeo) {
+        await this.player.pause()
       }
     },
-    stop () {
-      this.player.pause()
-      this.player.setCurrentTime(0)
+    async stop () {
+      await this.pause()
+      await this.player.setCurrentTime(0)
+    },
+    async setCurrentTime (time) {
+      await this.player.setCurrentTime(time)
     },
     onPauseClick () {
       this.pause()
@@ -503,6 +538,11 @@ export default {
   height 100%
   width 100%
 
+  &.--is-fullscreen
+    .AppVideo-ratioHelper
+      top 50%
+      transform translate3d(0px, -50%, 0px)
+
   button
     background-color transparent
     outline none
@@ -532,17 +572,27 @@ export default {
   width 100%
   height 100%
 
-.AppVideo-player
-  position relative
-  width 100%
-  height 100%
-  outline none
-
 .AppVideo-video
   z-index 10
 
 .AppVideo-interface
   z-index 20
+
+.AppVideo-localPlayer
+  position relative
+  width 100%
+  height 100%
+  outline none
+
+.AppVideo-vimeoPlayer
+  position relative
+  width 100%
+  height 100%
+  outline none
+
+  /deep/ iframe
+    width 100%
+    height 100%
 
 .AppVideo-poster
   background-color #000
@@ -582,7 +632,7 @@ export default {
     bottom 0
     right 0
     width 100%
-    height 200%
+    height 201%
     background linear-gradient(to top, black, transparent)
 
 .AppVideo-control
