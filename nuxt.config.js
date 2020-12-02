@@ -34,9 +34,15 @@ export default {
 
   // Modules (https://go.nuxtjs.dev/config-modules)
   modules: [
+    '~/modules/smooth-scroll',
+    '~/modules/events'
   ],
 
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {
-  }
+  },
+  /**
+   * Events module
+   */
+  events: ['ticker', 'resize']
 }
